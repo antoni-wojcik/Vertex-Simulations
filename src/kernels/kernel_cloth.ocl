@@ -1,0 +1,70 @@
+#define GRAV_ATTRACT 0.1f
+
+typedef float3 vec3;
+
+__constant vec3 grav = (vec3)(0.0f, -GRAV_ATTRACT, 0.0f);
+
+vec3 getVec(global const float* buff, int x, int y, int size_x) {
+    int id = (y * size_x + x) * 3;
+    return (vec3)(buff[id], buff[id + 1], buff[id + 2]);
+}
+
+void setBuff(global float* buff, int x, int y, int size_x, vec3 v) {
+    int id = (y * size_x + x) * 3;
+    buff[id]     = v.x;
+    buff[id + 1] = v.y;
+    buff[id + 2] = v.z;
+}
+
+vec3 springForce(vec3* r0, vec3 r1, float x0) {
+    vec3 normal = normalize(r1 - *r0);
+    return (r1 - *r0) - normal * x0;
+}
+
+vec3 dampingForce(vec3* r0, vec3 r1) {
+    return (r1 - *r0);
+}
+
+vec3 calcForce(global const float* buff_pos, global const float* buff_vel, int x, int y, int size_x, int size_y, float x0, float stiffness, float damping) {
+    vec3 pos = getVec(buff_pos, x, y, size_x);
+    vec3 vel = getVec(buff_vel, x, y, size_x);
+    
+    vec3 spring_force = (vec3)(0.0f, 0.0f, 0.0f);
+    vec3 damping_force = (vec3)(0.0f, 0.0f, 0.0f);
+    
+    spring_force += springForce(&pos, getVec(buff_pos, x, y - 1, size_x), x0);
+    damping_force += dampingForce(&vel, getVec(buff_vel, x, y - 1, size_x));
+    if(x != 0) {
+        spring_force += springForce(&pos, getVec(buff_pos, x - 1, y, size_x), x0);
+        damping_force += dampingForce(&vel, getVec(buff_vel, x - 1, y, size_x));
+    }
+    if(x != size_x - 1) {
+        spring_force += springForce(&pos, getVec(buff_pos, x + 1, y, size_x), x0);
+        damping_force += dampingForce(&vel, getVec(buff_vel, x + 1, y, size_x));
+    }
+    if(y != size_y - 1) {
+        spring_force += springForce(&pos, getVec(buff_pos, x, y + 1, size_x), x0);
+        damping_force += dampingForce(&vel, getVec(buff_vel, x, y + 1, size_x));
+    }
+    
+    return spring_force * stiffness + damping_force * damping + grav;
+}
+
+void kernel iterate_pos(global const float* buff_pos_i, global float* buff_pos_f, global const float* buff_vel, const int size_x, const int size_y, const float dt) {
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    vec3 pos = getVec(buff_pos_i, x, y, size_x);
+    vec3 vel = getVec(buff_vel, x, y, size_x);
+    pos += vel * dt;
+    setBuff(buff_pos_f, x, y, size_x, pos);
+}
+
+void kernel iterate_vel(global const float* buff_vel_i, global float* buff_vel_f, global const float* buff_pos, const int size_x, const int size_y, const float x0, const float stiffness, const float damping, const float dt) {
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    vec3 vel = getVec(buff_vel_i, x, y, size_x);
+    vel += calcForce(buff_pos, buff_vel_i, x, y, size_x, size_y, x0, stiffness, damping) * dt;
+    setBuff(buff_vel_f, x, y, size_x, vel);
+}

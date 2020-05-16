@@ -7,7 +7,7 @@
 //
 
 #define RETINA
-#define SCR_WIDTH 800
+#define SCR_WIDTH 1200
 #define SCR_HEIGHT 800
 #define ITERATION_LENGTH_MAX 3.0f
 #define ITERATION_LENGTH_MIN 0.001f
@@ -77,9 +77,9 @@ Camera* camera_ptr;
 int main(int argc, const char * argv[]) {
     GLFWwindow* window = initialiseOpenGL();
     
-    Cloth cloth(200, 100, 0.01f, 1.0f, 0.02f, 0.000001f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl", "iterate_pos", "iterate_vel");
+    Cloth cloth(500, 100, 0.01f, 1.0f, 500.0f, 0.1f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl", "iterate_pos", "iterate_vel");
     
-    Camera camera(60.0f, glm::vec3(0.0f, 0.0f, -2.0f));
+    Camera camera(60.0f, glm::vec3(-3.0f, -3.0f, -3.0f), 37.5f, 45.0f);
     camera_ptr = &camera;
     
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

@@ -240,8 +240,8 @@ private:
         kernel_vel.setArg(4, cloth_prop.size_y);
         kernel_vel.setArg(5, cloth_prop.length);
         
-        float effective_stiffness = cloth_prop.stiffness * (cloth_prop.size_x * cloth_prop.size_y) / cloth_prop.mass;
-        float effective_damping = cloth_prop.damping * (cloth_prop.size_x * cloth_prop.size_y) / cloth_prop.mass;
+        float effective_stiffness = cloth_prop.stiffness / cloth_prop.mass;
+        float effective_damping = cloth_prop.damping / cloth_prop.mass;
         
         kernel_vel.setArg(6, effective_stiffness);
         kernel_vel.setArg(7, effective_damping);

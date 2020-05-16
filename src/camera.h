@@ -25,6 +25,8 @@
 #define ZOOM_MAX 10.0f
 #define ZOOM_SPEED 0.5f
 
+#define UP_DIR glm::vec3(0.0f, -1.0f, 0.0f)
+
 enum CameraMovementDirection {
     FORWARD,
     BACK,
@@ -60,7 +62,7 @@ private:
         updatePVMatrix();
     }
 public:
-    Camera(int camera_fov = 60.0f, const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3& up_dir = glm::vec3(0.0f, -1.0f, 0.0f), float camera_aspect = 1.0f) : fov(camera_fov), aspect(camera_aspect), position(pos), up(up_dir), yaw(YAW), pitch(PITCH), speed(CAMERA_SPEED_SLOW) {
+    Camera(int camera_fov = 60.0f, const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), float y = YAW, float p = PITCH) : fov(camera_fov), aspect(1.0f), position(pos), up(UP_DIR), yaw(y), pitch(p), speed(CAMERA_SPEED_SLOW) {
         
         update();
     }

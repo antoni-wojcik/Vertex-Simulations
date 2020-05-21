@@ -62,7 +62,7 @@ private:
         updatePVMatrix();
     }
 public:
-    Camera(int camera_fov = 60.0f, const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), float y = YAW, float p = PITCH) : fov(camera_fov), aspect(1.0f), position(pos), up(UP_DIR), yaw(y), pitch(p), speed(CAMERA_SPEED_SLOW) {
+    Camera(float cam_fov = 60.0f, float cam_aspect = 1.0f, const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), float y = YAW, float p = PITCH) : fov(cam_fov), aspect(cam_aspect), position(pos), up(UP_DIR), yaw(y), pitch(p), speed(CAMERA_SPEED_SLOW) {
         
         update();
     }
@@ -115,6 +115,10 @@ public:
     
     inline glm::vec3 getPosition() const {
         return position;
+    }
+    
+    inline glm::vec3 getNormal() const {
+        return w;
     }
 };
 

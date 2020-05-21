@@ -267,7 +267,7 @@ private:
         
         // set the velocity step from 0 to 1/2
         
-        queue.enqueueNDRangeKernel(kernel_vel, cl::NDRange(0, 1), cl::NDRange(size_t(cloth_prop.size_x), size_t(cloth_prop.size_y - 1)), cl::NullRange);
+        queue.enqueueNDRangeKernel(kernel_vel, cl::NDRange(1, 1), cl::NDRange(size_t(cloth_prop.size_x - 2), size_t(cloth_prop.size_y - 2)), cl::NullRange);
         queue.enqueueCopyBuffer(buff_vel_next, buff_vel_prev, 0, 0, cl_manager.buff_size);
         queue.enqueueBarrierWithWaitList();
         
@@ -311,14 +311,14 @@ public:
             
                 // make sure the OpenGL has released the buffer
                 queue.enqueueAcquireGLObjects(&mem_objs);
-                queue.enqueueNDRangeKernel(kernel_pos, cl::NDRange(0, 1), cl::NDRange(size_t(cloth_prop.size_x), size_t(cloth_prop.size_y - 1)), cl::NullRange);
+                queue.enqueueNDRangeKernel(kernel_pos, cl::NDRange(1, 1), cl::NDRange(size_t(cloth_prop.size_x - 2), size_t(cloth_prop.size_y - 2)), cl::NullRange);
                 queue.enqueueCopyBuffer(buff_pos_next, buff_pos_prev, 0, 0, cl_manager.buff_size);
                 queue.enqueueReleaseGLObjects(&mem_objs);
                 queue.enqueueBarrierWithWaitList();
                 
                 // calculate new velocity
                 
-                queue.enqueueNDRangeKernel(kernel_vel, cl::NDRange(0, 1), cl::NDRange(size_t(cloth_prop.size_x), size_t(cloth_prop.size_y - 1)), cl::NullRange);
+                queue.enqueueNDRangeKernel(kernel_vel, cl::NDRange(1, 1), cl::NDRange(size_t(cloth_prop.size_x - 2), size_t(cloth_prop.size_y - 2)), cl::NullRange);
                 queue.enqueueCopyBuffer(buff_vel_next, buff_vel_prev, 0, 0, cl_manager.buff_size);
                 queue.enqueueBarrierWithWaitList();
             }
@@ -336,6 +336,7 @@ public:
         
         shader.setMat4("PVM", camera.getPVMatrix() * cloth_prop.model_matrix);
         shader.setMat3("M_normals", glm::mat3(glm::transpose(glm::inverse(cloth_prop.model_matrix))));
+        shader.setVec3("camera_dir", camera.getNormal());
         
         glBindVertexArray(gl_manager.VAO);
         glDrawElements(GL_TRIANGLES, gl_manager.indices_num, GL_UNSIGNED_INT, 0);

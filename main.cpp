@@ -13,6 +13,9 @@
 #define ITERATION_LENGTH_MIN 0.001f
 #define ITERATION_LENGTH_STRENGTH 3.0f
 
+#define MIN_FRAME_TIME 0.003f
+#define MAX_FRAME_COUNT 6
+
 
 #include <iostream>
 #include <cmath>
@@ -54,6 +57,7 @@ unsigned int scr_height = SCR_HEIGHT;
 // variables used in the main loop
 float last_frame_time = 0.0f;
 float delta_time = 0.0f;
+float lag = 0.0f;
 bool stopping = false;
 bool run = true;
 
@@ -77,9 +81,9 @@ Camera* camera_ptr;
 int main(int argc, const char * argv[]) {
     GLFWwindow* window = initialiseOpenGL();
     
-    Cloth cloth(500, 100, 0.01f, 1.0f, 500.0f, 0.1f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl", "iterate_pos", "iterate_vel");
+    Cloth cloth(500, 500, 0.01f, 1.0f, 500.0f, 0.2f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl", "iterate_pos", "iterate_vel");
     
-    Camera camera(60.0f, glm::vec3(-3.0f, -3.0f, -3.0f), 37.5f, 45.0f);
+    Camera camera(60.0f, (float)scr_width / (float)scr_height, glm::vec3(-3.5f), 45.0f, 45.0f);
     camera_ptr = &camera;
     
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -89,6 +93,7 @@ int main(int argc, const char * argv[]) {
         float current_time = glfwGetTime();
         delta_time = current_time - last_frame_time;
         last_frame_time = current_time;
+        lag += delta_time;
         
         glClearColor(0.7f, 0.8f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -100,7 +105,14 @@ int main(int argc, const char * argv[]) {
         glFinish();
         
         if(run) {
-            cloth.iterate(6);
+            if(lag >= MIN_FRAME_TIME) {
+                int steps = (int)(lag / MIN_FRAME_TIME);
+                lag -= steps * MIN_FRAME_TIME;
+                if(steps > MAX_FRAME_COUNT) steps = MAX_FRAME_COUNT;
+                cloth.iterate(steps);
+            }
+        } else {
+            lag = 0.0f;
         }
         
         glfwSwapBuffers(window);
@@ -115,6 +127,8 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
     scr_width = width;
     scr_height = height;
+    
+    camera_ptr->setSize((float)width / (float)height);
 }
 
 void processInput(GLFWwindow* window) {

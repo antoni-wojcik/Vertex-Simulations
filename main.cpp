@@ -18,18 +18,11 @@
 
 
 #include <iostream>
-#include <cmath>
+#include <fstream>
 
 // include the OpenGL libraries
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <OpenGL/OpenGL.h>
-
-//include the OpenCL library (C++ binding)
-#define __CL_ENABLE_EXCEPTIONS
-#define CL_HPP_TARGET_OPENCL_VERSION 120
-#define CL_HPP_MINIMUM_OPENCL_VERSION 120
-#include "cl2.hpp"
 
 #include "shader.h"
 #include "cloth.h"
@@ -43,6 +36,7 @@ void mouseCallback(GLFWwindow*, double, double);
 void mouseButtonCallback(GLFWwindow*, int, int, int);
 void scrollCallback(GLFWwindow*, double, double);
 void processInput(GLFWwindow*);
+void takeScreenshot(const std::string& name = "screenshot", bool show_image = false);
 void countFPS(float);
 
 #ifdef RETINA
@@ -76,17 +70,16 @@ float mouse_last_y = scr_width / 2.0f;
 bool taking_screenshot = false;
 
 // camera pointer
-Camera* camera_ptr;
+Camera* camera;
 
 int main(int argc, const char * argv[]) {
     GLFWwindow* window = initialiseOpenGL();
     
-    Cloth cloth(500, 500, 0.01f, 1.0f, 500.0f, 0.2f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl", "iterate_pos", "iterate_vel");
+    camera = new Camera(60.0f, (float)scr_width / (float)scr_height, glm::vec3(-3.5f), 45.0f, 45.0f);
     
-    Camera camera(60.0f, (float)scr_width / (float)scr_height, glm::vec3(-3.5f), 45.0f, 45.0f);
-    camera_ptr = &camera;
+    KernelGL* cloth = new Cloth(500, 500, 0.01f, 1.0f, 500.0f, 0.2f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl", "iterate_pos", "iterate_vel");
     
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
     glEnable(GL_DEPTH_TEST);
     
     while(!glfwWindowShouldClose(window)) {
@@ -100,16 +93,14 @@ int main(int argc, const char * argv[]) {
         
         processInput(window);
         
-        cloth.draw(camera);
-        
-        glFinish();
+        cloth->draw(camera);
         
         if(run) {
             if(lag >= MIN_FRAME_TIME) {
                 int steps = (int)(lag / MIN_FRAME_TIME);
                 lag -= steps * MIN_FRAME_TIME;
                 if(steps > MAX_FRAME_COUNT) steps = MAX_FRAME_COUNT;
-                cloth.iterate(steps);
+                cloth->iterate(steps);
             }
         } else {
             lag = 0.0f;
@@ -117,7 +108,11 @@ int main(int argc, const char * argv[]) {
         
         glfwSwapBuffers(window);
         glfwPollEvents();
+        glFinish();
     }
+    
+    delete cloth;
+    delete camera;
     
     glfwTerminate();
     return 0;
@@ -128,25 +123,25 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     scr_width = width;
     scr_height = height;
     
-    camera_ptr->setSize((float)width / (float)height);
+    camera->setSize((float)width / (float)height);
 }
 
 void processInput(GLFWwindow* window) {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
     
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera_ptr->move(FORWARD, delta_time);
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera_ptr->move(BACK, delta_time);
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera_ptr->move(LEFT, delta_time);
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera_ptr->move(RIGHT, delta_time);
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera->move(FORWARD, delta_time);
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera->move(BACK, delta_time);
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera->move(LEFT, delta_time);
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera->move(RIGHT, delta_time);
     
-    if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camera_ptr->setFasterSpeed(true);
-    else if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) camera_ptr->setFasterSpeed(false);
-    if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) camera_ptr->setSlowerSpeed(true);
-    else if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) camera_ptr->setSlowerSpeed(false);
+    if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camera->setFasterSpeed(true);
+    else if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) camera->setFasterSpeed(false);
+    if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) camera->setSlowerSpeed(true);
+    else if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) camera->setSlowerSpeed(false);
     
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
-        //if(!taking_screenshot) screen_ptr->takeScreenshot();
+        if(!taking_screenshot) takeScreenshot();
         taking_screenshot = true;
     } else if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_RELEASE) {
         taking_screenshot = false;
@@ -173,11 +168,11 @@ void mouseCallback(GLFWwindow* window, double pos_x, double pos_y) {
     mouse_last_x = pos_x;
     mouse_last_y = pos_y;
     
-    if(mouse_hidden) camera_ptr->rotate(offset_x, -offset_y);
+    if(mouse_hidden) camera->rotate(offset_x, -offset_y);
 }
 
 void scrollCallback(GLFWwindow* window, double offset_x, double offset_y) {
-    camera_ptr->zoom(offset_y);
+    camera->zoom(offset_y);
 }
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
@@ -241,4 +236,30 @@ GLFWwindow* initialiseOpenGL() {
     }
     
     return window;
+}
+
+void takeScreenshot(const std::string& name, bool show_image) {
+    std::cout << "Taking screenshot: " << name << ".tga " << ", dimensions: " << scr_width << ", " << scr_height << std::endl;
+    short TGA_header[] = {0, 2, 0, 0, 0, 0, (short)scr_width, (short)scr_height, 24};
+    char* pixel_data = new char[3 * scr_width * scr_height]; //there are 3 colors (RGB) for each pixel
+    std::ofstream file("screenshots/" + name + ".tga", std::ios::out | std::ios::binary);
+    if(!pixel_data || !file) {
+        std::cerr << "ERROR: COULD NOT TAKE THE SCREENSHOT" << std::endl;
+        exit(-1);
+    }
+    
+    glFinish();
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, scr_width, scr_height, GL_BGR, GL_UNSIGNED_BYTE, pixel_data);
+    glFinish();
+    
+    file.write((char*)TGA_header, 9 * sizeof(short));
+    file.write(pixel_data, 3 * scr_width * scr_height);
+    file.close();
+    delete [] pixel_data;
+    
+    if(show_image) {
+        std::cout << "Opening the screenshot" << std::endl;
+        std::system(("open " + name + ".tga").c_str());
+    }
 }

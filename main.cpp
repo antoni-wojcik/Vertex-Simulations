@@ -9,12 +9,10 @@
 #define RETINA
 #define SCR_WIDTH 1200
 #define SCR_HEIGHT 800
-#define ITERATION_LENGTH_MAX 3.0f
-#define ITERATION_LENGTH_MIN 0.001f
-#define ITERATION_LENGTH_STRENGTH 3.0f
 
 #define MIN_FRAME_TIME 0.003f
 #define MAX_FRAME_COUNT 6
+#define FPS_STEPS 5
 
 
 #include <iostream>
@@ -49,25 +47,13 @@ unsigned int scr_height = SCR_HEIGHT;
 #endif
 
 // variables used in the main loop
-float last_frame_time = 0.0f;
 float delta_time = 0.0f;
-float lag = 0.0f;
-bool stopping = false;
 bool run = true;
 
-// fps counter variables
-float fps_sum = 0.0f;
-const int fps_steps = 5;
-int fps_steps_counter = 0;
-
 // variables used in callbacks
-bool mouse_first_check = true;
 bool mouse_hidden = true;
 float mouse_last_x = scr_width / 2.0f;
 float mouse_last_y = scr_width / 2.0f;
-
-// screenshot variables
-bool taking_screenshot = false;
 
 // camera pointer
 Camera* camera;
@@ -81,6 +67,9 @@ int main(int argc, const char * argv[]) {
     
     //glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
     glEnable(GL_DEPTH_TEST);
+    
+    float last_frame_time = 0.0f;
+    float lag = 0.0f;
     
     while(!glfwWindowShouldClose(window)) {
         float current_time = glfwGetTime();
@@ -140,12 +129,16 @@ void processInput(GLFWwindow* window) {
     if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) camera->setSlowerSpeed(true);
     else if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) camera->setSlowerSpeed(false);
     
+    static bool taking_screenshot = false;
+    
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
         if(!taking_screenshot) takeScreenshot();
         taking_screenshot = true;
     } else if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_RELEASE) {
         taking_screenshot = false;
     }
+    
+    static bool stopping = false;
     
     if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         if(!stopping) run = !run;
@@ -156,6 +149,7 @@ void processInput(GLFWwindow* window) {
 }
 
 void mouseCallback(GLFWwindow* window, double pos_x, double pos_y) {
+    static bool mouse_first_check = true;
     if(mouse_first_check) {
         mouse_last_x = pos_x;
         mouse_last_y = pos_y;
@@ -187,11 +181,13 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 }
 
 void countFPS(float delta_time) {
+    static float fps_sum = 0.0f;
+    static int fps_steps_counter = 0;
     
     // count fps
-    if(fps_steps_counter == fps_steps) {
+    if(fps_steps_counter == FPS_STEPS) {
         fps_steps_counter = 0;
-        fps_sum = 0;
+        fps_sum = 0.0f;
     }
     fps_sum += delta_time;
     fps_steps_counter++;
@@ -239,10 +235,12 @@ GLFWwindow* initialiseOpenGL() {
 }
 
 void takeScreenshot(const std::string& name, bool show_image) {
-    std::cout << "Taking screenshot: " << name << ".tga " << ", dimensions: " << scr_width << ", " << scr_height << std::endl;
+    static int photo_count = 0;
+    std::string name_count = name + std::to_string(photo_count);
+    std::cout << "Taking screenshot: " << name_count << ".tga " << ", dimensions: " << scr_width << ", " << scr_height << std::endl;
     short TGA_header[] = {0, 2, 0, 0, 0, 0, (short)scr_width, (short)scr_height, 24};
     char* pixel_data = new char[3 * scr_width * scr_height]; //there are 3 colors (RGB) for each pixel
-    std::ofstream file("screenshots/" + name + ".tga", std::ios::out | std::ios::binary);
+    std::ofstream file("screenshots/" + name_count + ".tga", std::ios::out | std::ios::binary);
     if(!pixel_data || !file) {
         std::cerr << "ERROR: COULD NOT TAKE THE SCREENSHOT" << std::endl;
         exit(-1);
@@ -260,6 +258,7 @@ void takeScreenshot(const std::string& name, bool show_image) {
     
     if(show_image) {
         std::cout << "Opening the screenshot" << std::endl;
-        std::system(("open " + name + ".tga").c_str());
+        std::system(("open " + name_count + ".tga").c_str());
     }
+    photo_count++;
 }

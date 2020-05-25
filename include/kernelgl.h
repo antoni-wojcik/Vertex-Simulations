@@ -22,6 +22,8 @@
 class KernelGL {
 private:
     std::string loadSource(const char* kernel_path);
+    void initialiseOpenCL();
+    void buildProgram(const char* kernel_path);
     
 protected:
     cl::Device device;
@@ -30,13 +32,11 @@ protected:
     
     void processError(cl::Error& e);
     
-    void buildProgram(const char* kernel_path);
-    
 public:
+    KernelGL(const char* kernel_path);
     virtual ~KernelGL() {}
-    void initialiseOpenCL();
     
-    virtual void iterate(int steps) = 0;
+    virtual void iterate(int steps = 1) = 0;
     virtual void draw(const Camera* const) = 0;
 };
 

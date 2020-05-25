@@ -50,7 +50,7 @@ vec3 calcForce(global const float* buff_pos, global const float* buff_vel, int x
     return spring_force * stiffness + damping_force * damping + grav;
 }
 
-void kernel iterate_pos(global const float* buff_pos_i, global float* buff_pos_f, global const float* buff_vel, const int size_x, const int size_y, const float dt) {
+void kernel iteratePos(global const float* buff_pos_i, global float* buff_pos_f, global const float* buff_vel, const int size_x, const int size_y, const float dt) {
     int x = get_global_id(0);
     int y = get_global_id(1);
 
@@ -60,7 +60,7 @@ void kernel iterate_pos(global const float* buff_pos_i, global float* buff_pos_f
     setBuff(buff_pos_f, x, y, size_x, pos);
 }
 
-void kernel iterate_vel(global const float* buff_vel_i, global float* buff_vel_f, global const float* buff_pos, const int size_x, const int size_y, const float x0, const float stiffness, const float damping, const float dt) {
+void kernel iterateVel(global const float* buff_vel_i, global float* buff_vel_f, global const float* buff_pos, const int size_x, const int size_y, const float x0, const float stiffness, const float damping, const float dt) {
     int x = get_global_id(0);
     int y = get_global_id(1);
 

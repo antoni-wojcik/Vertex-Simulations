@@ -16,7 +16,7 @@
 #include <iostream>
 
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
+Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath) {
     std::string vertexCode;
     std::string fragmentCode;
     std::string geometryCode;

@@ -16,14 +16,12 @@
 #define CAMERA_SPEED_NORMAL 1.0f
 #define CAMERA_SPEED_FAST 5.0f
 #define MOUSE_SENSITIVITY 0.2f
-#define YAW 0.0f
-#define PITCH 0.0f
 #define ZOOM_MIN 90.0f
 #define ZOOM_MAX 10.0f
 #define ZOOM_SPEED 0.5f
 #define UP_DIR glm::vec3(0.0f, -1.0f, 0.0f)
 
-Camera::Camera(float cam_fov, float cam_aspect, const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), float y = YAW, float p = PITCH) : fov(cam_fov), aspect(cam_aspect), position(pos), up(UP_DIR), yaw(y), pitch(p), speed(CAMERA_SPEED_SLOW) {
+Camera::Camera(float cam_fov, float cam_aspect, const glm::vec3& pos, float y, float p) : fov(cam_fov), aspect(cam_aspect), position(pos), up(UP_DIR), yaw(y), pitch(p), speed(CAMERA_SPEED_SLOW) {
     
     update();
 }

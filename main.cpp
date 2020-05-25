@@ -77,7 +77,7 @@ int main(int argc, const char * argv[]) {
     
     camera = new Camera(60.0f, (float)scr_width / (float)scr_height, glm::vec3(-3.5f), 45.0f, 45.0f);
     
-    KernelGL* cloth = new Cloth(500, 500, 0.01f, 1.0f, 500.0f, 0.2f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl", "iterate_pos", "iterate_vel");
+    KernelGL* cloth = new Cloth(500, 500, 0.01f, 1.0f, 500.0f, 0.2f, glm::vec3(0.0f), 0.03f, "src/shaders/cloth.vs", "src/shaders/cloth.gs", "src/shaders/cloth.fs", "src/kernels/kernel_cloth.ocl");
     
     //glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
     glEnable(GL_DEPTH_TEST);

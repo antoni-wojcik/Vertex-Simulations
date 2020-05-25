@@ -50,16 +50,14 @@ private:
     
     void createGLBuffers();
     void createCLBuffers();
-    void createKernels(const char* kernel_pos_name, const char* kernel_vel_name);
+    void createKernels();
     void setConstKernelArgs();
     
 public:
-    Cloth(int x, int y, float l, float m, float k, float b, const glm::vec3& p, float dt, const char* cloth_vs_path, const char* cloth_gs_path, const char* cloth_fs_path, const char* kernel_path, const char* kernel_pos_name, const char* kernel_vel_name);
-    
+    Cloth(int x, int y, float l, float m, float k, float b, const glm::vec3& p, float dt, const char* vs_path, const char* gs_path, const char* fs_path, const char* kernel_path);
     ~Cloth();
     
-    virtual void iterate(int steps);
-    
+    virtual void iterate(int steps = 1);
     virtual void draw(const Camera* camera);
 };
 

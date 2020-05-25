@@ -15,6 +15,9 @@
 #include <vector>
 #include <string>
 
+#define KERNEL_POS "iteratePos"
+#define KERNEL_VEL "iterateVel"
+
 
 Cloth::ClothProperties::ClothProperties(int x, int y, float l, float m, float k, float b, const glm::vec3& p, float dt) {
     size_x = x;
@@ -33,11 +36,9 @@ void Cloth::ClothProperties::updateModelMatrix(const Camera* camera) {
     model_matrix = glm::scale(model_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
 }
 
-Cloth::Cloth(int x, int y, float l, float m, float k, float b, const glm::vec3& p, float dt, const char* cloth_vs_path, const char* cloth_gs_path, const char* cloth_fs_path, const char* kernel_path, const char* kernel_pos_name, const char* kernel_vel_name) : cloth_prop(x, y, l, m, k, b, p, dt), shader(cloth_vs_path, cloth_fs_path, cloth_gs_path) {
+Cloth::Cloth(int x, int y, float l, float m, float k, float b, const glm::vec3& p, float dt, const char* vs_path, const char* gs_path, const char* fs_path, const char* kernel_path) : KernelGL(kernel_path), cloth_prop(x, y, l, m, k, b, p, dt), shader(vs_path, fs_path, gs_path) {
     try {
-        initialiseOpenCL();
-        buildProgram(kernel_path);
-        createKernels(kernel_pos_name, kernel_vel_name);
+        createKernels();
         createGLBuffers();
         createCLBuffers();
     } catch(cl::Error e) {
@@ -113,12 +114,8 @@ void Cloth::createCLBuffers() {
     buff_vel_prev = cl::Buffer(context, CL_MEM_READ_WRITE, buff_size);
     buff_vel_next = cl::Buffer(context, CL_MEM_READ_WRITE, buff_size);
     
-    int size = cloth_prop.size_x * cloth_prop.size_x * 3;
-    float* vel = new float[size];
-    for(int i = 0; i < size; i++) vel[i] = 0.0f;
-    
     cl::CommandQueue queue(context, device);
-    queue.enqueueWriteBuffer(buff_vel_prev, CL_TRUE, 0, buff_size, vel);
+    queue.enqueueFillBuffer(buff_vel_prev, 0, 0, buff_size);
     queue.enqueueCopyBuffer(buff_pos_next, buff_pos_prev, 0, 0, buff_size);
     queue.enqueueBarrierWithWaitList();
     
@@ -129,19 +126,17 @@ void Cloth::createCLBuffers() {
     queue.enqueueNDRangeKernel(kernel_vel, cl::NDRange(1, 1), cl::NDRange(size_t(cloth_prop.size_x - 2), size_t(cloth_prop.size_y - 2)), cl::NullRange);
     queue.enqueueCopyBuffer(buff_vel_next, buff_vel_prev, 0, 0, buff_size);
     queue.enqueueBarrierWithWaitList();
-    
-    kernel_vel.setArg(8, cloth_prop.time_step);
-    
+
     queue.finish();
     
-    delete [] vel;
+    kernel_vel.setArg(8, cloth_prop.time_step);
 }
 
-void Cloth::createKernels(const char* kernel_pos_name, const char* kernel_vel_name) {
+void Cloth::createKernels() {
     // create the kernels given the names
     
-    kernel_pos = cl::Kernel(program, kernel_pos_name);
-    kernel_vel = cl::Kernel(program, kernel_vel_name);
+    kernel_pos = cl::Kernel(program, KERNEL_POS);
+    kernel_vel = cl::Kernel(program, KERNEL_VEL);
 }
 
 void Cloth::setConstKernelArgs() {
@@ -167,7 +162,7 @@ void Cloth::setConstKernelArgs() {
     kernel_vel.setArg(8, cloth_prop.time_step * 0.5f);
 }
 
-void Cloth::iterate(int steps = 1) {
+void Cloth::iterate(int steps) {
     try {
         std::vector<cl::Memory> mem_objs;
         mem_objs.push_back(buff_pos_next);

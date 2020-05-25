@@ -17,6 +17,15 @@
 #include <fstream>
 #include <sstream>
 
+KernelGL::KernelGL(const char* kernel_path) {
+    try {
+        initialiseOpenCL();
+        buildProgram(kernel_path);
+    } catch(cl::Error e) {
+        processError(e);
+    }
+}
+
 std::string KernelGL::loadSource(const char* kernel_path) {
     std::string kernel_code;
     std::ifstream kernel_file;

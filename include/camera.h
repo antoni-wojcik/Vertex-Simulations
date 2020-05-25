@@ -32,7 +32,7 @@ private:
     void update();
     
 public:
-    Camera(float cam_fov, float cam_aspect, const glm::vec3& pos, float y, float p);
+    Camera(float cam_fov, float cam_aspect, const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), float y = 0.0f, float p = 0.0f);
     
     void move(CameraMovementDirection dir, float dt);
     void rotate(float x, float y);

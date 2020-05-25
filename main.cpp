@@ -33,7 +33,7 @@ void framebufferSizeCallback(GLFWwindow*, int, int);
 void mouseCallback(GLFWwindow*, double, double);
 void mouseButtonCallback(GLFWwindow*, int, int, int);
 void scrollCallback(GLFWwindow*, double, double);
-void processInput(GLFWwindow*);
+void processInput(GLFWwindow*, float);
 void takeScreenshot(const std::string& name = "screenshot", bool show_image = false);
 void countFPS(float);
 
@@ -47,13 +47,10 @@ unsigned int scr_height = SCR_HEIGHT;
 #endif
 
 // variables used in the main loop
-float delta_time = 0.0f;
 bool run = true;
 
 // variables used in callbacks
 bool mouse_hidden = true;
-float mouse_last_x = scr_width / 2.0f;
-float mouse_last_y = scr_width / 2.0f;
 
 // camera pointer
 Camera* camera;
@@ -69,6 +66,7 @@ int main(int argc, const char * argv[]) {
     glEnable(GL_DEPTH_TEST);
     
     float last_frame_time = 0.0f;
+    float delta_time = 0.0f;
     float lag = 0.0f;
     
     while(!glfwWindowShouldClose(window)) {
@@ -80,7 +78,7 @@ int main(int argc, const char * argv[]) {
         glClearColor(0.7f, 0.8f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        processInput(window);
+        processInput(window, delta_time);
         
         cloth->draw(camera);
         
@@ -115,7 +113,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     camera->setSize((float)width / (float)height);
 }
 
-void processInput(GLFWwindow* window) {
+void processInput(GLFWwindow* window, float delta_time) {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
     
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
@@ -134,21 +132,22 @@ void processInput(GLFWwindow* window) {
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
         if(!taking_screenshot) takeScreenshot();
         taking_screenshot = true;
-    } else if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_RELEASE) {
+    } else if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_RELEASE)
         taking_screenshot = false;
-    }
     
     static bool stopping = false;
     
     if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         if(!stopping) run = !run;
         stopping = true;
-    } else if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
+    } else if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
         stopping = false;
-    }
 }
 
 void mouseCallback(GLFWwindow* window, double pos_x, double pos_y) {
+    static float mouse_last_x;
+    static float mouse_last_y;
+    
     static bool mouse_first_check = true;
     if(mouse_first_check) {
         mouse_last_x = pos_x;
@@ -237,7 +236,7 @@ GLFWwindow* initialiseOpenGL() {
 void takeScreenshot(const std::string& name, bool show_image) {
     static int photo_count = 0;
     std::string name_count = name + std::to_string(photo_count);
-    std::cout << "Taking screenshot: " << name_count << ".tga " << ", dimensions: " << scr_width << ", " << scr_height << std::endl;
+    std::cout << "Taking screenshot: " << name_count << ".tga" << ", dimensions: " << scr_width << ", " << scr_height << std::endl;
     short TGA_header[] = {0, 2, 0, 0, 0, 0, (short)scr_width, (short)scr_height, 24};
     char* pixel_data = new char[3 * scr_width * scr_height]; //there are 3 colors (RGB) for each pixel
     std::ofstream file("screenshots/" + name_count + ".tga", std::ios::out | std::ios::binary);
